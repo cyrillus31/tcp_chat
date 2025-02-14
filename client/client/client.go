@@ -23,13 +23,12 @@ func New(connAddr string) *Client {
 
 func (c *Client) Start() {
 	for {
-		input := []byte{}
+		var input []byte
 		fmt.Scan(&input)
 		_, err := c.conn.Write(input)
 		if err != nil {
 			return
 		}
-		println("Message sent")
 	}
 }
 

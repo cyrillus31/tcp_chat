@@ -1,18 +1,51 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"net"
-	"os"
 )
 
 type Server struct {
 	listnAddr string
-	listener net.Listener
+	listener  net.Listener
 }
 
 func NewServer(listAddr string) *Server {
 	return &Server{
 		listnAddr: listAddr,
+	}
+}
+
+func (s Server) processConnection(ctx context.Context, conn net.Conn) {
+	for {
+		select {
+		case <-ctx.Done():
+			println("Stopping processConnection")
+			return
+		default:
+			buf := make([]byte, 8)
+			conn.Read(buf)
+			fmt.Printf("%s\n", buf)
+		}
+	}
+}
+func (s Server) lookForConnections(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			println("Stopping lookForConnections")
+			return
+		default:
+			println("Looking for connection")
+			conn, err := s.listener.Accept()
+			if err != nil {
+				panic(err)
+			}
+			println("Connection created to", conn.RemoteAddr().String())
+			go s.processConnection(ctx, conn)
+			defer conn.Close()
+		}
 	}
 }
 
@@ -22,15 +55,15 @@ func (s *Server) Start() {
 		panic(err)
 	}
 	s.listener = listener
-	conn, err := s.listener.Accept()
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	go s.lookForConnections(ctx)
 	for {
-		buf := make([]byte, 8)
-		conn.Read(buf)
-		os.Stdout.Write(buf)
+		var input string
+		fmt.Scan(&input)
+		if input == "stop" {
+			cancel()
+			fmt.Println("Connections cancelled!")
+		}
 	}
 }
 
