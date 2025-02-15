@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 type Server struct {
@@ -24,9 +26,7 @@ func (s Server) processConnection(ctx context.Context, conn net.Conn) {
 			println("Stopping processConnection")
 			return
 		default:
-			buf := make([]byte, 8)
-			conn.Read(buf)
-			fmt.Printf("%s\n", buf)
+		io.Copy(os.Stdout, conn)
 		}
 	}
 }
