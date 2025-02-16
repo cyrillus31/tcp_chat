@@ -24,7 +24,7 @@ func (m *Message) Marshal() ([]byte, error) {
 
 	lenght := len(JSONdata)
 	lenghtData := make([]byte, 2)
-	binary.BigEndian.AppendUint16(lenghtData, uint16(lenght))
+	binary.BigEndian.PutUint16(lenghtData, uint16(lenght))
 
 	fullData = append(fullData, lenghtData...)
 	fullData = append(fullData, JSONdata...)
@@ -44,8 +44,8 @@ func (m *Message) Unmarshal(data []byte) error {
 	if len(data) < end {
 		return errors.New("Data is too short")
 	}
-	// JSONdata := data[HEADER_LENGTH:HEADER_LENGTH + length]
-	JSONdata := data[HEADER_LENGTH:]
+	JSONdata := data[HEADER_LENGTH:HEADER_LENGTH + length]
+	println("DEBUG :: ", "length:", length, "end:", end, "total_len:", len(data), "len_jsondata:", len(JSONdata))
 	err := json.Unmarshal(JSONdata, m)
 	if err != nil {
 		return fmt.Errorf("Error during Unmarshal: %w", err)

@@ -23,7 +23,7 @@ func (h *Handler) SendData(conn net.Conn, r io.Reader) error {
 		return err
 	}
 	msg := Message{User: conn.LocalAddr().String(), Text: string(buf[:n])}
-	msgData, err := msg.Marshall()
+	msgData, err := msg.Marshal()
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (h *Handler) HandleData(conn net.Conn, w io.Writer) error {
 		return err
 	}
 	msg := Message{}
-	err = msg.Unmarshall(buf[:n])
+	err = msg.Unmarshal(buf[:n])
 	if err != nil {
 		return err
 	}
