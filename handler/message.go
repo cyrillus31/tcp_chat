@@ -12,7 +12,8 @@ type Message struct {
 	Text string `json:"text"`
 }
 
-func (m *Message) Marshall() ([]byte, error) {
+// Marshal Message into []byte
+func (m *Message) Marshal() ([]byte, error) {
 	JSONdata, err := json.Marshal(m)
 	if err != nil {
 		return []byte{}, err
@@ -30,7 +31,8 @@ func (m *Message) Marshall() ([]byte, error) {
 	return fullData, nil
 }
 
-func (m *Message) Unmarshall(data []byte) error {
+// Unmarshal Message from []byte
+func (m *Message) Unmarshal(data []byte) error {
 	if data[0] != VERSION {
 		return errors.New("Version is not correct")
 	}
