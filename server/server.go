@@ -2,12 +2,14 @@ package server
 
 import (
 	"context"
-	"io"
+	// "io"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/cyrillus31/tcp_chat/handler"
 )
 
 type Server struct {
@@ -23,14 +25,20 @@ func NewServer(listAddr string) *Server {
 	}
 }
 
+var Handler = handler.Handler{}
+
 func (s Server) processConnection(ctx context.Context, conn net.Conn) {
 	for {
 		select {
-		case <-ctx.Done():
+		case <-s.quitCh:
 			println("Stopping processConnection")
 			return
 		default:
-			io.Copy(os.Stdout, conn)
+			// io.Copy(os.Stdout, conn)
+			err := Handler.HandleData(conn, os.Stdout)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 }
@@ -53,15 +61,12 @@ func (s *Server) Start() {
 	}
 	s.listener = listener
 	defer s.listener.Close()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 	go s.lookForConnections(ctx)
 	signal.Notify(s.quitCh, os.Interrupt, syscall.SIGTERM)
 	defer log.Println("Server gracefully stops!")
 	select {
 	case <-s.quitCh:
-		return
-	case <-ctx.Done():
 		return
 	}
 }

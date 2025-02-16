@@ -4,8 +4,11 @@ import (
 	"net"
 	"os"
 
-	"github.com/cyrillus31/tcp_chat/internals/utils"
+	"github.com/cyrillus31/tcp_chat/handler"
+	// "github.com/cyrillus31/tcp_chat/internals/utils"
 )
+
+var Handler handler.Handler
 
 type Client struct {
 	connAddr string
@@ -26,7 +29,8 @@ func New(connAddr string) *Client {
 
 func (c *Client) writeMessage() {
 	for {
-		err := utils.Copy(c.conn, os.Stdin)
+		// err := utils.Copy(c.conn, os.Stdin)
+		err := Handler.SendData(c.conn, os.Stdin)
 		if err != nil {
 			panic(err)
 		}

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 type Message struct {
@@ -41,10 +42,11 @@ func (m *Message) Unmarshall(data []byte) error {
 	if len(data) < end {
 		return errors.New("Data is too short")
 	}
-	JSONdata := data[HEADER_LENGTH:HEADER_LENGTH + length]
+	// JSONdata := data[HEADER_LENGTH:HEADER_LENGTH + length]
+	JSONdata := data[HEADER_LENGTH:]
 	err := json.Unmarshal(JSONdata, m)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error during Unmarshal: %w", err)
 	}
 	return nil
 }
