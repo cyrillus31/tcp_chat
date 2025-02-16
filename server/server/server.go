@@ -2,20 +2,24 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 type Server struct {
 	listnAddr string
 	listener  net.Listener
+	quitCh    chan os.Signal
 }
 
 func NewServer(listAddr string) *Server {
 	return &Server{
 		listnAddr: listAddr,
+		quitCh:    make(chan os.Signal),
 	}
 }
 
@@ -26,26 +30,19 @@ func (s Server) processConnection(ctx context.Context, conn net.Conn) {
 			println("Stopping processConnection")
 			return
 		default:
-		io.Copy(os.Stdout, conn)
+			io.Copy(os.Stdout, conn)
 		}
 	}
 }
-func (s Server) lookForConnections(ctx context.Context) {
+func (s Server) lookForConnections(ctx context.Context) error {
 	for {
-		select {
-		case <-ctx.Done():
-			println("Stopping lookForConnections")
-			return
-		default:
-			println("Looking for connection")
-			conn, err := s.listener.Accept()
-			if err != nil {
-				panic(err)
-			}
-			println("Connection created to", conn.RemoteAddr().String())
-			go s.processConnection(ctx, conn)
-			defer conn.Close()
+		conn, err := s.listener.Accept()
+		if err != nil {
+			return err
 		}
+		println("Connection created to", conn.RemoteAddr().String())
+		go s.processConnection(ctx, conn)
+		defer conn.Close()
 	}
 }
 
@@ -55,15 +52,17 @@ func (s *Server) Start() {
 		panic(err)
 	}
 	s.listener = listener
+	defer s.listener.Close()
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	go s.lookForConnections(ctx)
-	for {
-		var input string
-		fmt.Scan(&input)
-		if input == "stop" {
-			cancel()
-			fmt.Println("Connections cancelled!")
-		}
+	signal.Notify(s.quitCh, os.Interrupt, syscall.SIGTERM)
+	defer log.Println("Server gracefully stops!")
+	select {
+	case <-s.quitCh:
+		return
+	case <-ctx.Done():
+		return
 	}
 }
 
